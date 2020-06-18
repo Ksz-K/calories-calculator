@@ -49,9 +49,26 @@ const ItemCtrl = (function () {
       });
       return found;
     },
+    updatedItem: function (name, calories) {
+      //Calories 2 number
+      calories = parseInt(calories);
+      let found;
+      data.items.forEach(function (item) {
+        if (item.id === data.currentItem[0].id) {
+          item.name = name;
+          item.calories = calories;
+          found = item;
+        }
+      });
+      return found;
+    },
     setCurrentItem: function (currentItem) {
       data.currentItem = currentItem;
     },
+    getCurrentItem: function () {
+      return data.currentItem[0];
+    },
+
     getTotalCalories: function () {
       let total = 0;
       data.items.forEach(function (item) {
@@ -73,6 +90,7 @@ const ItemCtrl = (function () {
 const UICtrl = (function () {
   const UISelectors = {
     itemList: "#item-list",
+    listItems: "#item-list li",
     addBtn: ".add-btn",
     updateBtn: ".update-btn",
     deleteBtn: ".delete-btn",
@@ -124,9 +142,35 @@ const UICtrl = (function () {
         .querySelector(UISelectors.itemList)
         .insertAdjacentElement("beforeend", li);
     },
+    updateListItem: function (updatedItem) {
+      let listItems = document.querySelectorAll(UISelectors.listItems);
+      //Make listItems an Array
+      listItems = Array.from(listItems);
+
+      listItems.forEach(function (listItem) {
+        const itemId = listItem.getAttribute("id");
+        if (itemId === `item-${updatedItem.id}`) {
+          document.querySelector(`#${itemId}`).innerHTML = `
+          <strong>${updatedItem.name}:</strong> <em> ${updatedItem.calories} Kalorii</em>
+                <a href="#" class="secondary-content">
+                    <i class="edit-item fa fa-pencil"></i>
+                </a>
+          `;
+        }
+      });
+    },
     clearInput: function () {
       document.querySelector(UISelectors.itemNameInput).value = "";
       document.querySelector(UISelectors.itemCaloriesInput).value = "";
+    },
+    addItem2form: function () {
+      document.querySelector(
+        UISelectors.itemNameInput
+      ).value = ItemCtrl.getCurrentItem().name;
+      document.querySelector(
+        UISelectors.itemCaloriesInput
+      ).value = ItemCtrl.getCurrentItem().calories;
+      UICtrl.showEditState();
     },
     hideList: function () {
       document.querySelector(UISelectors.itemList).style.display = "none";
@@ -142,6 +186,12 @@ const UICtrl = (function () {
       document.querySelector(UISelectors.deleteBtn).style.display = "none";
       document.querySelector(UISelectors.backBtn).style.display = "none";
       document.querySelector(UISelectors.addBtn).style.display = "inline";
+    },
+    showEditState: function () {
+      document.querySelector(UISelectors.updateBtn).style.display = "inline";
+      document.querySelector(UISelectors.deleteBtn).style.display = "inline";
+      document.querySelector(UISelectors.backBtn).style.display = "inline";
+      document.querySelector(UISelectors.addBtn).style.display = "none";
     },
     getSelectors: function () {
       return UISelectors;
@@ -161,9 +211,22 @@ const App = (function (ItemCtrl, UICtrl) {
       .querySelector(UISelectors.addBtn)
       .addEventListener("click", itemAddSubmit);
 
+    //Disable submit on enter
+    document.addEventListener("keypress", function (e) {
+      if (e.keyCode.code === 13 || e.witch === 13) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
     //Edit icon click event
     document
       .querySelector(UISelectors.itemList)
+      .addEventListener("click", itemEditClick);
+
+    //Update item event
+    document
+      .querySelector(UISelectors.updateBtn)
       .addEventListener("click", itemUpdateSubmit);
   };
 
@@ -191,21 +254,36 @@ const App = (function (ItemCtrl, UICtrl) {
     }
   };
 
-  //Update item submit
-  const itemUpdateSubmit = function (e) {
+  //Item Edit click
+  const itemEditClick = function (e) {
     e.preventDefault();
     if (e.target.classList.contains("edit-item")) {
       //Get list item id
       const listId = e.target.parentNode.parentNode.id;
       const id = parseInt(listId.replace("item-", ""));
-      console.log(id);
 
       //Get item
       const item2edit = ItemCtrl.getItemById(id);
 
       //Set current item
       ItemCtrl.setCurrentItem(item2edit);
+
+      //Add item 2 form
+      UICtrl.addItem2form();
     }
+  };
+
+  //Update item submit
+  const itemUpdateSubmit = function (e) {
+    e.preventDefault();
+    //Get item input
+    const input = UICtrl.getItemInput();
+
+    //Update item
+    const updatedItem = ItemCtrl.updatedItem(input.name, input.calories);
+
+    //Update UI
+    UICtrl.updateListItem(updatedItem);
   };
 
   //Public methods
