@@ -1,4 +1,36 @@
 //Storage Controller
+const StorageCtrl = (function () {
+  //Public methods
+  return {
+    storeItem: function (item) {
+      let items;
+      //Check if ls contains any items
+      if (localStorage.getItem("items") === null) {
+        items = [];
+        //Push new item to array
+        items.push(item);
+        //Save to LS
+        localStorage.setItem("items", JSON.stringify(items));
+      } else {
+        //Get items from LS
+        items = JSON.parse(localStorage.getItem("items"));
+        //Push new item to array
+        items.push(item);
+        //Save updated items to LS
+        localStorage.setItem("items", JSON.stringify(items));
+      }
+    },
+    getItemsFromStorage: function () {
+      let items;
+      if (localStorage.getItem("items") === null) {
+        items = [];
+      } else {
+        items = JSON.parse(localStorage.getItem("items"));
+      }
+      return items;
+    },
+  };
+})();
 
 //Item Controller
 const ItemCtrl = (function () {
@@ -10,11 +42,11 @@ const ItemCtrl = (function () {
   };
   //Data Structure /State
   const data = {
-    items: [
-      //   { id: 0, name: "Schabowy z kapustą", calories: 1200 },
-      //   { id: 1, name: "Piwo", calories: 120 },
-      //   { id: 2, name: "Sernik", calories: 200 },
-    ],
+    items: StorageCtrl.getItemsFromStorage(),
+
+    // [  { id: 0, name: "Schabowy z kapustą", calories: 1200 },
+    //   { id: 1, name: "Piwo", calories: 120 },
+    //   { id: 2, name: "Sernik", calories: 200 },]
     currentItem: null,
     totalCalories: 0,
   };
@@ -224,7 +256,7 @@ const UICtrl = (function () {
 })();
 
 //App Controller
-const App = (function (ItemCtrl, UICtrl) {
+const App = (function (ItemCtrl, StorageCtrl, UICtrl) {
   //Load event listeners
   const loadEventListeners = function () {
     //Get UI Selectors
@@ -288,6 +320,8 @@ const App = (function (ItemCtrl, UICtrl) {
       //Add total calories to UI
       UICtrl.showTotalCalories(totalCalories);
 
+      //Store in localStorage
+      StorageCtrl.storeItem(newItem);
       //Clear input fields
       UICtrl.clearInput();
     }
@@ -398,7 +432,7 @@ const App = (function (ItemCtrl, UICtrl) {
       loadEventListeners();
     },
   };
-})(ItemCtrl, UICtrl);
+})(ItemCtrl, StorageCtrl, UICtrl);
 
 //Initialize App
 App.init();
